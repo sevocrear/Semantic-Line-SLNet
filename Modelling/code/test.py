@@ -4,6 +4,7 @@ from evaluation.eval_process import *
 from libs.utils import *
 from PIL import Image
 import torchvision.transforms as transforms
+
 class Test_Process_NMS(object):
     def __init__(self, cfg, dict_DB):
 
@@ -28,6 +29,7 @@ class Test_Process_NMS(object):
 
         self.transform = transforms.Compose([transforms.Resize((cfg.height, cfg.width), 2),
                                              transforms.ToTensor()])
+    @calculate_time
     def inference(self, img, batch,  SLNet, cfg):
         # semantic line detection
         if type(img) != torch.Tensor:

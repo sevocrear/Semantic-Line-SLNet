@@ -124,7 +124,6 @@ class Visualize_plt(object):
             pts_mul = to_np(out['mul'])
             for i in range(pts_mul.shape[0]):
                 self.draw_lines_plt(pts_mul[i], 4, 0, '-', zorder=1)
-        print(img_name[:-4] + '.png')
         self.save_fig(path=self.cfg.output_dir + 'test/out_single/',
                       name=img_name[:-4] + '.png')
 
