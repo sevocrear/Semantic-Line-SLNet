@@ -5,13 +5,13 @@ class regression_loss(nn.Module):
     def __init__(self):
         super(regression_loss, self).__init__()
 
-    def forward(self, out, gt):
+    def forward(self, out, gt, cfg):
 
         dist = out - gt
         dist_abs = torch.abs(dist)
 
-        binary_1 = (dist_abs < 1).type(torch.FloatTensor).cuda()
-        binary_2 = (dist_abs >= 1).type(torch.FloatTensor).cuda()
+        binary_1 = (dist_abs < 1).type(torch.FloatTensor).to(cfg.device)
+        binary_2 = (dist_abs >= 1).type(torch.FloatTensor).to(cfg.device)
 
         d1 = 0.5 * (dist_abs ** 2)
         d2 = dist_abs - 0.5
@@ -27,10 +27,10 @@ class Loss_Function(nn.Module):
         self.reg_loss = regression_loss()
         self.cls_loss = nn.BCELoss()
 
-    def forward(self, output, gt_cls, gt_reg):
+    def forward(self, output, gt_cls, gt_reg, cfg):
 
         L1 = self.cls_loss(output['cls'], gt_cls[0])
-        L2 = self.reg_loss(output['reg'], gt_reg[0])
+        L2 = self.reg_loss(output['reg'], gt_reg[0], cfg)
 
         return L1 + L2, L1, L2
 

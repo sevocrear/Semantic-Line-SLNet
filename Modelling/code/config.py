@@ -10,22 +10,22 @@ class Config(object):
         # dataset dir
         self.dataset = 'SEL'  # ['SEL', 'SEL_Hard']
         if self.dataset == 'SEL':
-            self.dataset_dir = '--SEL dataset root/'  # need to modify
-            self.img_dir = self.dataset_dir + 'ICCV2017_JTLEE_images/'
+            self.dataset_dir = '/Users/ilya/Yandex.Disk.localized/Work/ATOM/code/Semantic-Line-SLNet/Modelling/code/SEL/'  # need to modify
+            self.img_dir = os.path.join(self.dataset_dir, 'ICCV2017_JTLEE_images/')
         elif self.dataset == 'SEL_Hard':
             self.dataset_dir = '--SEL_Hard dataset root/'  # need to modify
-            self.img_dir = self.dataset_dir + 'images/'
+            self.img_dir = os.path.join(self.dataset_dir, 'images')
 
         # other dir
-        self.pickle_dir = self.dataset_dir + 'data/detector/' # -- preprocessed data root ## need to modify
-        self.weight_dir = self.output_dir + '/train/weight/'
-        self.paper_weight_dir = self.proj_dir + '/paper_weight/'  # need to modify
+        self.pickle_dir = os.path.join(self.proj_dir, 'code/SEL/data/SLNet/') # -- preprocessed data root ## need to modify
+        self.weight_dir = '/Users/ilya/Yandex.Disk.localized/Work/ATOM/code/Semantic-Line-SLNet/paper_weight/checkpoint_SLNet_paper'
+        self.paper_weight_dir = '/Users/ilya/Yandex.Disk.localized/Work/ATOM/code/Semantic-Line-SLNet/paper_weight/'  # need to modify
 
         # setting for train & test
-        self.run_mode = 'test_paper'  # ['train', 'test', 'test_paper']
+        self.run_mode = 'test_paper'  # ['train', 'test', 'test_paper', 'test_imgs']
         self.resume = True
-
-        self.gpu_id = "0"
+        
+        self.device = 'cpu'
         self.seed = 123
         self.num_workers = 4
         self.epochs = 500

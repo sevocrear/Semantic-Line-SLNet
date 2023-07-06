@@ -5,21 +5,21 @@ from networks.loss import *
 def load_SLNet_for_test(cfg, dict_DB):
 
     if cfg.run_mode == 'test_paper':
-        checkpoint = torch.load(cfg.paper_weight_dir + 'checkpoint_SLNet_paper')
+        checkpoint = torch.load(cfg.paper_weight_dir + 'checkpoint_SLNet_paper', map_location=cfg.device)
     else:
         # select ckpt from output_dir
-        checkpoint = torch.load(cfg.weight_dir + '')
+        checkpoint = torch.load(cfg.weight_dir + '', map_location=cfg.device)
     model = SLNet(cfg=cfg)
 
     model.load_state_dict(checkpoint['model'], strict=False)
-    model.cuda()
+    model.to(cfg.device)
     dict_DB['SLNet'] = model
 
     return dict_DB
 
 def load_SLNet_for_train(cfg, dict_DB):
     model = SLNet(cfg=cfg)
-    model.cuda()
+    model.to(cfg.device)
     optimizer = torch.optim.Adam(params=model.parameters(),
                                  lr=cfg.lr,
                                  weight_decay=cfg.weight_decay)

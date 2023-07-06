@@ -4,8 +4,8 @@ class Forward_Model(object):
     def __init__(self, cfg):
         self.cfg = cfg
 
-    def run_detector(self, img, line_pts, step, model):
-        out = create_test_dict()
+    def run_detector(self, img, line_pts, step, model, cfg):
+        out = create_test_dict(cfg)
 
         # semantic line detection (SLNet)
         feat1, feat2 = model.feature_extraction(img)

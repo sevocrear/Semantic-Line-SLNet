@@ -21,7 +21,7 @@ class Train_Process_SLNet(object):
         self.logfile = dict_DB['logfile']
         self.epoch_s = dict_DB['epoch']
 
-    def training(self):
+    def training(self, cfg):
 
         self.SLNet.train()
         loss_t = {'sum': 0, 'cls': 0, 'reg': 0}
@@ -33,10 +33,10 @@ class Train_Process_SLNet(object):
 
             # shuffle idx with pos:neg = 4:6
             idx = torch.randperm(self.cfg.batch_size['train_line'])
-            batch['train_data'] = batch['train_data'].cuda()
+            batch['train_data'] = batch['train_data'].to(cfg.device)
             batch['train_data'][0, :] = batch['train_data'][0, idx]
             # load data
-            img = batch['img'].cuda()
+            img = batch['img'].to(cfg.device)
             candidates = batch['train_data'][:, :, :4]
             gt_cls = batch['train_data'][:, :, 4:6]
             gt_reg = batch['train_data'][:, :, 6:]
@@ -47,7 +47,8 @@ class Train_Process_SLNet(object):
             # loss
             loss, loss_cls, loss_reg = self.loss_fn(output=out,
                                                     gt_cls=gt_cls,
-                                                    gt_reg=gt_reg)
+                                                    gt_reg=gt_reg,
+                                                    cfg = cfg)
 
             # optimize
             self.optimizer.zero_grad()
@@ -59,7 +60,7 @@ class Train_Process_SLNet(object):
             # display
             if i % 100 == 0:
                 print('iter %d' % i)
-                self.visualize.display_for_train_detector(batch, out, i)
+                self.visualize.display_for_train_detector(batch, out, i, cfg = cfg)
                 logger("Loss : %5f, "
                        "Loss_cls : %5f, "
                        "Loss_reg : %5f\n"
@@ -95,12 +96,12 @@ class Train_Process_SLNet(object):
                                                                      self.val_result['AUC_R_upper_P_0.78'], auc_r, auc_p, 0.78,
                                                                      logger, self.logfile, 'AUC_R_upper_P_0.78')
 
-    def run(self):
+    def run(self, cfg):
         for epoch in range(self.epoch_s, self.cfg.epochs):
             self.epoch = epoch
             print('epoch %d' % epoch)
             logger("epoch %d\n" % epoch, self.logfile)
-            self.training()
+            self.training(cfg)
             if epoch > 40:
                 self.validation()
 

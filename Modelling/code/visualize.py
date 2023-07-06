@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from libs.utils import *
 from libs.modules import *
-
+from glob import glob
 class Visualize_plt(object):
 
     def __init__(self, cfg=None):
@@ -12,7 +12,7 @@ class Visualize_plt(object):
         self.cfg = cfg
         self.height = cfg.height
         self.width = cfg.width
-        self.size = to_tensor(np.float32(cfg.size))
+        self.size = to_tensor(np.float32(cfg.size), cfg)
 
         self.mean = np.array([cfg.mean], dtype=np.float32)
         self.std = np.array([cfg.std], dtype=np.float32)
@@ -65,16 +65,16 @@ class Visualize_plt(object):
     def draw_lines_cv(self, data, name, ref_name='img', color=(255, 0, 0), s=1):
         img = np.ascontiguousarray(np.copy(self.show[ref_name]))
         for i in range(data.shape[0]):
-            pts = data[i]
+            pts = data[i].astype(int)
             pt_1 = (pts[0], pts[1])
             pt_2 = (pts[2], pts[3])
             img = cv2.line(img, pt_1, pt_2, color, s)
 
         self.show[name] = img
 
-    def display_for_train_detector(self, batch, out, idx):
+    def display_for_train_detector(self, batch, out, idx, cfg):
         img_name = batch['img_name'][0]
-        candidates = batch['train_data'][0].cuda()
+        candidates = batch['train_data'][0].to(cfg.device)
         self.show['img_name'] = img_name
 
         img = to_np(batch['img_rgb'][0].permute(1, 2, 0))
@@ -100,11 +100,21 @@ class Visualize_plt(object):
                       file_name=str(idx)+'.jpg',
                       list=['pos', 'neg', 'out'])
 
-    def display_for_test(self, batch, out):
-        img_name = batch['img_name'][0]
-        self.load_image(dir_name=self.cfg.img_dir,
-                        file_name=img_name,
-                        name='img')
+    def display_for_test(self, batch, out, img):
+        if batch is not None:
+            img_name = batch['img_name'][0]
+        else:
+            img_name = f"{len(glob(os.path.join(self.cfg.output_dir, 'test','out_single', '*.png')))}.png"
+        
+        if type(img) == torch.Tensor:
+            self.load_image(dir_name=self.cfg.img_dir,
+                            file_name=img_name,
+                            name='img')
+        else:
+            img =   cv2.resize(img, (self.height, self.width))
+            self.show[img_name] = img
+            self.img = img
+            
         self.show_image()
 
         if 'pri' in out.keys():
@@ -114,7 +124,7 @@ class Visualize_plt(object):
             pts_mul = to_np(out['mul'])
             for i in range(pts_mul.shape[0]):
                 self.draw_lines_plt(pts_mul[i], 4, 0, '-', zorder=1)
-
+        print(img_name[:-4] + '.png')
         self.save_fig(path=self.cfg.output_dir + 'test/out_single/',
                       name=img_name[:-4] + '.png')
 

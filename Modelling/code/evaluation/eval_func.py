@@ -21,31 +21,31 @@ class Evaluation_Function(object):
 
         self.X, self.Y = np.meshgrid(np.linspace(0, self.width - 1, self.width),
                                      np.linspace(0, self.height - 1, self.height))
-        self.X = torch.tensor(self.X, dtype=torch.float, requires_grad=False).cuda()
-        self.Y = torch.tensor(self.Y, dtype=torch.float, requires_grad=False).cuda()
+        self.X = torch.tensor(self.X, dtype=torch.float, requires_grad=False).to(cfg.device)
+        self.Y = torch.tensor(self.Y, dtype=torch.float, requires_grad=False).to(cfg.device)
 
-    def measure_miou(self, out, gt):
+    def measure_miou(self, out, gt, cfg):
 
 
         ### mask
         output_mask = divided_region_mask(line_pts=out,
-                                          size=[self.width, self.height])
+                                          size=[self.width, self.height], cfg = cfg)
         gt_mask = divided_region_mask(line_pts=gt,
-                                      size=[self.width, self.height])
+                                      size=[self.width, self.height],  cfg = cfg)
 
         # miou
         precision_miou = measure_IoU_set(ref_mask=gt_mask,
-                                         tar_mask=output_mask)
+                                         tar_mask=output_mask, cfg = cfg)
         recall_miou = precision_miou.clone().permute(1, 0).contiguous()
 
         return precision_miou, recall_miou
 
-    def matching(self, miou, idx):
+    def matching(self, miou, idx, cfg):
 
         out_num, gt_num = miou['p'][idx].shape
 
-        precision = torch.zeros((out_num), dtype=torch.float32).cuda()
-        recall = torch.zeros((gt_num), dtype=torch.float32).cuda()
+        precision = torch.zeros((out_num), dtype=torch.float32).to(cfg.device)
+        recall = torch.zeros((gt_num), dtype=torch.float32).to(cfg.device)
 
         for i in range(out_num):
             if gt_num == 0:
@@ -58,10 +58,9 @@ class Evaluation_Function(object):
 
             out_idx = max_idx / gt_num
             gt_idx = max_idx % gt_num
-
-            precision[out_idx] = miou['p'][idx].view(-1)[max_idx]
-            miou['p'][idx][out_idx, :] = -1
-            miou['p'][idx][:, gt_idx] = -1
+            precision[out_idx.long()] = miou['p'][idx].view(-1)[max_idx.long()]
+            miou['p'][idx][out_idx.long(), :] = -1
+            miou['p'][idx][:, gt_idx.long()] = -1
 
         for i in range(gt_num):
             if out_num == 0:
@@ -69,15 +68,15 @@ class Evaluation_Function(object):
 
             max_idx = torch.argmax(miou['r'][idx].view(-1))
 
-            if miou['r'][idx].view(-1)[max_idx] == -1:
+            if miou['r'][idx].view(-1)[max_idx.long()] == -1:
                 continue
 
             gt_idx = max_idx / out_num
             out_idx = max_idx % out_num
 
-            recall[gt_idx] = miou['r'][idx].view(-1)[max_idx]
-            miou['r'][idx][gt_idx, :] = -1
-            miou['r'][idx][:, out_idx] = -1
+            recall[gt_idx.long()] = miou['r'][idx].view(-1)[max_idx.long()]
+            miou['r'][idx][gt_idx.long(), :] = -1
+            miou['r'][idx][:, out_idx.long()] = -1
 
         return precision, recall
 
@@ -125,19 +124,19 @@ class Evaluation_Function(object):
         return AUC
 
 
-def divided_region_mask(line_pts, size):
+def divided_region_mask(line_pts, size, cfg):
 
     line_num, _ = line_pts.shape
     width, height = int(size[0]), int(size[1])
 
     X, Y = np.meshgrid(np.linspace(0, width - 1, width), np.linspace(0, height - 1, height))  # after x before
-    X = torch.tensor(X, dtype=torch.float, requires_grad=False).unsqueeze(0).cuda()
-    Y = torch.tensor(Y, dtype=torch.float, requires_grad=False).unsqueeze(0).cuda()
+    X = torch.tensor(X, dtype=torch.float, requires_grad=False).unsqueeze(0).to(cfg.device)
+    Y = torch.tensor(Y, dtype=torch.float, requires_grad=False).unsqueeze(0).to(cfg.device)
 
     check = ((line_pts[:, 0] - line_pts[:, 2]) == 0).type(torch.float)
 
-    mask1 = torch.zeros((line_num, height, width), dtype=torch.float32).cuda()
-    mask2 = torch.zeros((line_num, height, width), dtype = torch.float32).cuda()
+    mask1 = torch.zeros((line_num, height, width), dtype=torch.float32).to(cfg.device)
+    mask2 = torch.zeros((line_num, height, width), dtype = torch.float32).to(cfg.device)
 
     mask1[check == 1, :, :] = (X < line_pts[:, 0].view(line_num, 1, 1)).type(torch.float)[check == 1, :, :]
     mask2[check == 1, :, :] = (X >= line_pts[:, 0].view(line_num, 1, 1)).type(torch.float)[check == 1, :, :]
@@ -153,11 +152,11 @@ def divided_region_mask(line_pts, size):
 
     return torch.cat((mask1.unsqueeze(1), mask2.unsqueeze(1)), dim=1)
 
-def measure_IoU_set(ref_mask, tar_mask):
+def measure_IoU_set(ref_mask, tar_mask, cfg):
     ref_num = ref_mask.shape[0]
     tar_num = tar_mask.shape[0]
 
-    miou = torch.zeros((tar_num, ref_num), dtype=torch.float32).cuda()
+    miou = torch.zeros((tar_num, ref_num), dtype=torch.float32).to(cfg.device)
 
     for i in range(tar_num):
         iou_1, check1 = measure_IoU(tar_mask[i, 0].unsqueeze(0), ref_mask[:, 0])
@@ -216,17 +215,3 @@ def draw_plot(data, path):
     # plt.show()
     plt.savefig(path + metric + '.png')
     plt.close()
-
-
-# # pickle
-# def save_pickle(dir_name, file_name, data):
-#
-#     mkdir(dir_name)
-#     with open(dir_name + file_name + '.pickle', 'wb') as f:
-#         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
-#
-#
-# # directory & file
-# def mkdir(path):
-#     if os.path.exists(path) == False:
-#         os.makedirs(path)

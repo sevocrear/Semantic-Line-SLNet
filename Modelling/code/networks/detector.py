@@ -116,7 +116,7 @@ class SLNet(nn.Module):
         self.regression = Regression()
         self.classification = Classification()
 
-        size = torch.FloatTensor(cfg.size).cuda()
+        size = torch.FloatTensor(cfg.size).to(cfg.device)
         self.line_pooling = Line_Pooling_Layer(size=size)
 
 

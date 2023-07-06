@@ -23,8 +23,8 @@ def _init_fn(worker_id):
     return
 
 # convertor
-def to_tensor(data):
-    return torch.from_numpy(data).cuda()
+def to_tensor(data, cfg):
+    return torch.from_numpy(data).to(cfg.device)
 
 def to_np(data):
     return data.cpu().numpy()
@@ -68,15 +68,15 @@ def load_pickle(file_path):
     return data
 
 # create dict
-def create_test_dict():
+def create_test_dict(cfg):
 
     out = {'cls': {},
            'reg': {},
            'pos': {}}  # detected lines
 
     # pred
-    out['cls'] = torch.FloatTensor([]).cuda()
-    out['reg'] = torch.FloatTensor([]).cuda()
+    out['cls'] = torch.FloatTensor([]).to(cfg.device)
+    out['reg'] = torch.FloatTensor([]).to(cfg.device)
 
     return out
 

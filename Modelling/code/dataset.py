@@ -36,7 +36,7 @@ class Train_Dataset_SLNet(Dataset):
     def get_data(self, flip, idx):
 
         data = self.datalist[idx]
-
+        
         pos_data = np.concatenate((data['pos_line']['endpts'],
                                    data['pos_line']['cls'],
                                    data['pos_line']['offset']), axis=1)

@@ -14,14 +14,14 @@ def measure_IoU(X1, X2):
 
     return iou, check
 
-def non_maximum_suppression(score, mask, thresd):
+def non_maximum_suppression(score, mask, thresd, cfg):
 
     num = mask.shape[0]
 
     sorted_idx = torch.argsort(score, descending=True)
 
-    visit = torch.zeros((num), dtype=torch.float32).cuda()
-    nms_check_all = torch.zeros((num), dtype=torch.float32).cuda()
+    visit = torch.zeros((num), dtype=torch.float32).to(cfg.device)
+    nms_check_all = torch.zeros((num), dtype=torch.float32).to(cfg.device)
     for i in range(num):
 
         ref_idx = sorted_idx[i]
@@ -30,7 +30,7 @@ def non_maximum_suppression(score, mask, thresd):
             continue
 
         visit[ref_idx] = 1
-        max_miou = torch.zeros((num), dtype=torch.float32).cuda()
+        max_miou = torch.zeros((num), dtype=torch.float32).to(cfg.device)
 
         iou_1, check1 = measure_IoU(mask[ref_idx, 0].unsqueeze(0), mask[:, 0])
         iou_2, check2 = measure_IoU(mask[ref_idx, 1].unsqueeze(0), mask[:, 1])
@@ -51,19 +51,19 @@ def non_maximum_suppression(score, mask, thresd):
 
     return nms_check_all
 
-def divided_region_mask(line_pts, size):
+def divided_region_mask(line_pts, size, cfg):
 
     line_num, _ = line_pts.shape
     width, height = int(size[0]), int(size[1])
 
     X, Y = np.meshgrid(np.linspace(0, width - 1, width), np.linspace(0, height - 1, height))  # after x before
-    X = torch.tensor(X, dtype=torch.float, requires_grad=False).unsqueeze(0).cuda()
-    Y = torch.tensor(Y, dtype=torch.float, requires_grad=False).unsqueeze(0).cuda()
+    X = torch.tensor(X, dtype=torch.float, requires_grad=False).unsqueeze(0).to(cfg.device)
+    Y = torch.tensor(Y, dtype=torch.float, requires_grad=False).unsqueeze(0).to(cfg.device)
 
     check = ((line_pts[:, 0] - line_pts[:, 2]) == 0).type(torch.float)
 
-    mask1 = torch.zeros((line_num, height, width), dtype=torch.float32).cuda()
-    mask2 = torch.zeros((line_num, height, width), dtype = torch.float32).cuda()
+    mask1 = torch.zeros((line_num, height, width), dtype=torch.float32).to(cfg.device)
+    mask2 = torch.zeros((line_num, height, width), dtype = torch.float32).to(cfg.device)
 
     mask1[check == 1, :, :] = (X < line_pts[:, 0].view(line_num, 1, 1)).type(torch.float)[check == 1, :, :]
     mask2[check == 1, :, :] = (X >= line_pts[:, 0].view(line_num, 1, 1)).type(torch.float)[check == 1, :, :]
